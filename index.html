@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Reward</title>
+<style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+    #header { font-size: 2em; margin-bottom: 20px; }
+    #user-info { position: absolute; top: 10px; right: 10px; font-weight: bold; }
+    #claim-btn { padding: 15px 30px; font-size: 1.2em; cursor: pointer; margin-top: 20px; }
+    #timer { margin-top: 10px; font-size: 1.1em; color: #555; }
+    #rewards { margin-top: 20px; font-size: 1.1em; }
+</style>
+</head>
+<body>
+
+<div id="header">Daily Reward</div>
+<div id="user-info"></div>
+
+<div id="login">
+    <input type="text" id="username" placeholder="Enter your username">
+    <button onclick="login()">Start</button>
+</div>
+
+<div id="reward" style="display:none;">
+    <button id="claim-btn" onclick="claimReward()" disabled>Claim Reward</button>
+    <div id="timer"></div>
+    <div id="rewards"></div>
+</div>
+
+<script>
+const CLAIM_INTERVAL = 92 * 60 * 60 * 1000; // 92 hours in ms
+
+const possibleRewards = [
+    { coins: 10, exp: 0, diamonds: 0, soulShards: 0 },
+    { coins: 15, exp: 0, diamonds: 0, soulShards: 0 },
+    { coins: 0, exp: 9, diamonds: 0, soulShards: 0 },
+    { coins: 0, exp: 0, diamonds: 2, soulShards: 0 },
+    { coins: 0, exp: 0, diamonds: 0, soulShards: 5 }
+];
+
+function login() {
+    const username = document.getElementById('username').value.trim();
+    if (!username) return alert('Please enter a username!');
+    
+    localStorage.setItem('username', username);
+
+    // Initialize user stats if they don't exist
+    if (!localStorage.getItem('coins')) localStorage.setItem('coins', 0);
+    if (!localStorage.getItem('exp')) localStorage.setItem('exp', 0);
+    if (!localStorage.getItem('diamonds')) localStorage.setItem('diamonds', 0);
+    if (!localStorage.getItem('soulShards')) localStorage.setItem('soulShards', 0);
+    if (!localStorage.getItem('lastClaim')) localStorage.setItem('lastClaim', 0);
+
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('reward').style.display = 'block';
+    updateUI();
+    setInterval(updateUI, 1000);
+}
+
+function updateUI() {
+    const username = localStorage.getItem('username');
+    const coins = parseInt(localStorage.getItem('coins'));
+    const exp = parseInt(localStorage.getItem('exp'));
+    const diamonds = parseInt(localStorage.getItem('diamonds'));
+    const soulShards = parseInt(localStorage.getItem('soulShards'));
+    const lastClaim = parseInt(localStorage.getItem('lastClaim'));
+    const now = Date.now();
+
+    document.getElementById('user-info').innerText = 
+        `${username} | Coins: ${coins} | EXP: ${exp} | Diamonds: ${diamonds} | Soul Shards: ${soulShards}`;
+
+    const btn = document.getElementById('claim-btn');
+    const timerDiv = document.getElementById('timer');
+
+    const remaining = lastClaim + CLAIM_INTERVAL - now;
+    if (remaining <= 0) {
+        btn.disabled = false;
+        timerDiv.innerText = 'You can claim your reward now!';
+    } else {
+        btn.disabled = true;
+        const hours = Math.floor(remaining / (1000 * 60 * 60));
+        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+        timerDiv.innerText = `Next claim in ${hours}h ${minutes}m ${seconds}s`;
+    }
+}
+
+function claimReward() {
+    // Pick a random reward from the possibleRewards array
+    const reward = possibleRewards[Math.floor(Math.random() * possibleRewards.length)];
+
+    // Add rewards to storage
+    localStorage.setItem('coins', parseInt(localStorage.getItem('coins')) + (reward.coins || 0));
+    localStorage.setItem('exp', parseInt(localStorage.getItem('exp')) + (reward.exp || 0));
+    localStorage.setItem('diamonds', parseInt(localStorage.getItem('diamonds')) + (reward.diamonds || 0));
+    localStorage.setItem('soulShards', parseInt(localStorage.getItem('soulShards')) + (reward.soulShards || 0));
+
+    localStorage.setItem('lastClaim', Date.now());
+
+    // Show what was received
+    let rewardText = 'You received: ';
+    if (reward.coins) rewardText += `${reward.coins} Coins `;
+    if (reward.exp) rewardText += `${reward.exp} EXP `;
+    if (reward.diamonds) rewardText += `${reward.diamonds} Diamonds `;
+    if (reward.soulShards) rewardText += `${reward.soulShards} Soul Shards `;
+    document.getElementById('rewards').innerText = rewardText;
+
+    updateUI();
+}
+</script>
+
+</body>
+</html>
